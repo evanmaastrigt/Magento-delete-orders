@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>       
+	    <Kwetal_DeleteOrders>
+	        <active>true</active>
+            <codePool>local</codePool>
+	    </Kwetal_DeleteOrders>  
+    </modules>
+</config>

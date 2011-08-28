@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Kwetal_DeleteOrders>
+            <version>0.1.0</version>
+        </Kwetal_DeleteOrders>
+    </modules>
+    <global>
+		<rewrite>
+        <kwetal_kwetaladmin_adminhtml_sales_order>
+            <from><![CDATA[#/admin/sales_order/#]]></from>
+            <to>/kwetaladmin/adminhtml_sales_order/</to>
+        </kwetal_kwetaladmin_adminhtml_sales_order>
+        </rewrite>		
+        <blocks>
+            <adminhtml>
+                <rewrite>
+                    <sales_order_grid>Kwetal_DeleteOrders_Block_Adminhtml_Sales_Order_Grid</sales_order_grid>
+                </rewrite>
+            </adminhtml>
+        </blocks>		
+    </global>
+	<admin>
+        <routers>
+            <kwetal_deleteorders>
+                <use>admin</use>
+                <args>
+                    <module>Kwetal_DeleteOrders</module>
+                    <frontName>kwetaladmin</frontName>
+                </args>
+            </kwetal_deleteorders>			
+			<adminhtml>
+				<args>
+				  <modules>
+					<Kwetal_DeleteOrders_Adminhtml before="Mage_Adminhtml">Kwetal_DeleteOrders_Adminhtml</Kwetal_DeleteOrders_Adminhtml>
+				  </modules>
+				</args>
+			</adminhtml>
+        </routers>
+    </admin>
+</config>
