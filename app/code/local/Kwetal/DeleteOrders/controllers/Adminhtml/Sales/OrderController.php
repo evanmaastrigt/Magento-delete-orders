@@ -1,29 +1,16 @@
 <?php
-/*
-	Copyright (c) 2011, Edwin van Maastrigt (evanmaastrigt@gmail.com)
-	All rights reserved.
-
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions are met:
-
-	* Redistributions of source code must retain the above copyright notice, this
-	  list of conditions and the following disclaimer.
-
-	* Redistributions in binary form must reproduce the above copyright notice,
-	  this list of conditions and the following disclaimer in the documentation
-	  and/or other materials provided with the distribution.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-	IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-	DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-	SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-	CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
- */
+/**
+* Open Source Initiative OSI - The MIT License (MIT):Licensing
+* 
+* The MIT License (MIT)
+* Copyright (c) 2011 - 2012 Edwin van Maastrigt
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 require_once 'Mage/Adminhtml/controllers/Sales/OrderController.php';
 
@@ -31,6 +18,9 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 {
 	protected $_db;
 	
+	/**
+	 *@todo Move the whole lot over to a Model, or even better a ResourceModel
+	*/
     public function deleteorderAction()
     { 
 		$resource = Mage::getSingleton('core/resource');
@@ -42,13 +32,15 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 											  WHERE order_id = ?)",
 							   'key' => 'orderId');
 		$orderTables[] = array('table' => $resource->getTableName('sales_flat_creditmemo_comment'),
-							   'where' => "order_id= ?",
+							   'where' => "parent_id IN
+											(SELECT entity_id FROM " . $resource->getTableName('sales_flat_creditmemo') . "
+											 WHERE order_id = ?)",
 							   'key' => 'orderId');
 		$orderTables[] = array('table' => $resource->getTableName('sales_flat_creditmemo'),
-								'where' => "WHERE order_id = ?",
+								'where' => "order_id = ?",
 								'key' => 'orderId');
 		$orderTables[] = array('table' => $resource->getTableName('sales_flat_creditmemo_grid'),
-							   'where' =>  "WHERE order_id = ?",
+							   'where' =>  "order_id = ?",
 							   'key' => 'orderId');
 		
 		$orderTables[] = array('table' => $resource->getTableName('sales_flat_invoice_item'),
@@ -69,7 +61,7 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 							   'key' => 'orderId');
 		
 		$orderTables[] = array('table' => $resource->getTableName('sales_flat_quote_address_item'),
-							   'where' => "WHERE parent_item_id IN
+							   'where' => "parent_item_id IN
 										    (SELECT address_id FROM " . $resource->getTableName('sales_flat_quote_address') . "
 											 WHERE quote_id = ?)",
 							   'key' => 'quoteId');
@@ -134,7 +126,7 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 							   'where'=> "parent_id = ?",
 							   'key' => 'orderId');					
 		$orderTables[] = array('table' => $resource->getTableName('sales_flat_order_grid'),
-							   'where'=> "increment_id = ?",
+							   'where'=> "entity_id = ?",
 							   'key' => 'orderId');
 	
 		$orderTables[] = array('table' => $resource->getTableName('log_quote'),
@@ -154,7 +146,7 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 				$query = $db->quoteInto("SELECT quote_id
 									     FROM   " . $resource->getTableName('sales_flat_order') ."
 									     WHERE entity_id = ?", $orderId);
-				$result = $write->fetchAll($query);
+				$result = $db->fetchAll($query);
 				if(sizeof($result) > 0) {
 					$quoteId = $result[0]['quote_id'];
 				}
@@ -162,7 +154,7 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 			
 			foreach($orderTables as $table) {
 				if($table['table']) {
-					$query = "DELETE FROM " . $table['table'] . "WHERE " . $table['where'];
+					$query = "DELETE FROM " . $table['table'] . " WHERE " . $table['where'];
 					$query = $db->quoteInto($query, ${$table['key']});
 					try {
 						$db->query($query);
@@ -175,11 +167,13 @@ class Kwetal_DeleteOrders_Adminhtml_Sales_OrderController extends Mage_Adminhtml
 		}
 		$db->query("SET FOREIGN_KEY_CHECKS = 1");
 		
+		//var_dump($errors);
+		//flush();
 		if(sizeof($errors) == 0) {
 			$this->_getSession()->addSuccess($this->__('%s Order(s) deleted.',
 													   sizeof($this->getRequest()->getPost('order_ids'))));
 		} else {
-			$this->_getSession()->addError($this->__('Order(s) error.'));
+			$this->_getSession()->addError($this->__('Order(s) error'));
 		}
 			
 		$this->_redirect('*/*/');		
